@@ -26,9 +26,9 @@ function formatDate(v){if(!v)return 'تاريخ العرس';const d=new Date(v+'
 safeText('dateLine','📅 '+formatDate(date));safeText('timeLine','🕗 الساعة '+time);safeText('venueLine','📍 '+venue);
 document.title='دعوة زفاف - '+groom+' و '+bride;
 const rsvp=document.getElementById('rsvp');
-rsvp.href='https://wa.me/'+phone.replace(/\\D/g,'')+'?text='+encodeURIComponent('السلام عليكم، نحب نأكد حضوري في عرس '+groom+' و '+bride+'.');
+rsvp.href='https://wa.me/'+phone.replace(/\D/g,'')+'?text='+encodeURIComponent('السلام عليكم، نحب نأكد حضوري في عرس '+groom+' و '+bride+'.');
 const map=document.getElementById('map');
-if(mapUrl && /^https?:\\/\\//i.test(mapUrl)){map.href=mapUrl;map.hidden=false;}else{map.hidden=true;}
+if(mapUrl && /^https?:\/\//i.test(mapUrl)){map.href=mapUrl;map.hidden=false;}else{map.hidden=true;}
 const weddingDate=new Date((date||'2027-11-20')+'T'+(time||'20:00')+':00');
 const parts={days:document.getElementById('days'),hours:document.getElementById('hours'),minutes:document.getElementById('minutes'),seconds:document.getElementById('seconds')};
 function updateCountdown(){let r=Math.max(0,weddingDate.getTime()-Date.now());const d=Math.floor(r/86400000);r%=86400000;const h=Math.floor(r/3600000);r%=3600000;const m=Math.floor(r/60000);r%=60000;const s=Math.floor(r/1000);parts.days.textContent=d.toLocaleString('ar-DZ');parts.hours.textContent=h.toLocaleString('ar-DZ');parts.minutes.textContent=m.toLocaleString('ar-DZ');parts.seconds.textContent=s.toLocaleString('ar-DZ');}
