@@ -51,12 +51,16 @@ function renderCard(data){
     timerInterval=setInterval(updateCountdown,1000);
 }
 
-// جلب البيانات إذا كان هناك ID في الرابط القصير
+// جلب بيانات الدعوة من Wedding Card API
 if(p.has('id')){
-    const binId=p.get('id');
-    fetch('https://api.jsonbin.io/v3/b/'+binId+'/latest')
-        .then(r=>r.json())
-        .then(res=>{if(res && res.record) renderCard(res.record); else renderCard({});})
+    const invitationId=p.get('id');
+    fetch('https://wedding-card-api.colonyus666.workers.dev/api/invitations/'+encodeURIComponent(invitationId))
+        .then(async r=>{
+            const res=await r.json();
+            if(!r.ok || !res.success || !res.invitation) throw new Error('Invitation unavailable');
+            return res.invitation;
+        })
+        .then(invitation=>renderCard(invitation))
         .catch(()=>renderCard({}));
 } else {
     renderCard({});
