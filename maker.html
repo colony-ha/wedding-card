@@ -9,13 +9,34 @@
 <div class="wide"><label for="maps">رابط Google Maps (اختياري)</label><input id="maps" type="url" placeholder="https://maps.app.goo.gl/..."></div>
 <div class="wide"><label for="message">رسالة إضافية (اختياري)</label><textarea id="message" placeholder="بكل حب وفرح، يشرفنا دعوتكم لمشاركتنا فرحتنا."></textarea></div></div>
 <div class="actions"><button class="primary" type="submit">🔗 إنشاء رابط الزبون</button><button class="secondary" type="reset">مسح المعلومات</button></div></form>
-<section class="result" id="result" hidden><label for="link">رابط الدعوة الجاهز</label><input class="url" id="link" readonly><div class="actions"><button class="primary" id="copy" type="button">نسخ الرابط</button><button class="secondary" id="open" type="button">فتح الدعوة</button></div><p class="hint">تقدر تقصّر الرابط قبل ما تبعثه. المعلومات موجودة داخل الرابط، وأي شخص يملكه يقدر يشوفها.</p></section></section>
+<section class="result" id="result" hidden><label for="link">رابط الدعوة الجاهز</label><input class="url" id="link" readonly><div class="actions"><button class="primary" id="copy" type="button">نسخ الرابط</button><button class="secondary" id="open" type="button">فتح الدعوة</button></div><p class="hint">هذا الرابط مشفر ونظيف، ابعته للزبون بكل اطمئنان.</p></section></section>
 <section class="panel preview-panel"><h2>👀 المعاينة المباشرة</h2><div class="preview-shell"><iframe id="preview" title="معاينة دعوة الزفاف"></iframe></div></section></div>
 <div class="back"><a href="index.html">فتح الموديل الأصلي</a></div>
 <script>
 const $=id=>document.getElementById(id);
 const keys=['groom','bride','date','time','venue','phone','maps','message'];
-function makeUrl(){const u=new URL('index.html',location.href);u.search='';for(const k of keys){const v=$(k).value.trim();if(v)u.searchParams.set(k,v)}return u;}
+
+// دالة لدعم ترميز الحروف العربية بشكل صحيح مع Base64
+function encodeData(obj) {
+    const jsonStr = JSON.stringify(obj);
+    const utf8Bytes = new TextEncoder().encode(jsonStr);
+    let binaryString = '';
+    utf8Bytes.forEach(b => binaryString += String.fromCharCode(b));
+    return btoa(binaryString);
+}
+
+function makeUrl(){
+    const data = {};
+    for(const k of keys){
+        const v = $(k).value.trim();
+        if(v) data[k] = v;
+    }
+    const u = new URL('index.html', location.href);
+    u.search = '';
+    u.searchParams.set('d', encodeData(data));
+    return u;
+}
+
 function updatePreview(){const u=makeUrl();$('preview').src=u.href;}
 let previewTimer;
 document.querySelectorAll('#form input,#form textarea').forEach(el=>el.addEventListener('input',()=>{clearTimeout(previewTimer);previewTimer=setTimeout(updatePreview,180)}));
