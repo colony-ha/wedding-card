@@ -15,7 +15,7 @@
 <script>
 const $=id=>document.getElementById(id);
 const keys=['groom','bride','date','time','venue','phone','maps','message'];
-const API_KEY='$2a$10$dei7GONK.tJ99hzXvzHmYuSHFIZB4mXuqYoRtD.BhkqMkQmgJYyYa';
+const API_URL='https://wedding-card-api.colonyus666.workers.dev';
 
 // تحديث المعاينة المباشرة محلياً بسرعة
 function makePreviewUrl(){
@@ -31,7 +31,7 @@ function updatePreview(){$('preview').src=makePreviewUrl().href;}
 let previewTimer;
 document.querySelectorAll('#form input,#form textarea').forEach(el=>el.addEventListener('input',()=>{clearTimeout(previewTimer);previewTimer=setTimeout(updatePreview,180)}));
 
-// حفظ البيانات في JSONbin وإنشاء رابط قصير
+// حفظ الدعوة عبر Worker ثم اختصار رابطها باستعمال is.gd
 $('form').addEventListener('submit',async e=>{
     e.preventDefault();
     const btn=$('submitBtn');
@@ -46,26 +46,41 @@ $('form').addEventListener('submit',async e=>{
     }
 
     try{
-        const res=await fetch('https://api.jsonbin.io/v3/b',{
+        const saveResponse=await fetch(API_URL+'/api/invitations',{
             method:'POST',
-            headers:{
-                'Content-Type':'application/json',
-                'X-Master-Key':API_KEY,
-                'X-Bin-Private':'false'
-            },
+            headers:{'Content-Type':'application/json'},
             body:JSON.stringify(payload)
         });
-        if(!res.ok) throw new Error('API Error');
-        const json=await res.json();
-        const binId=json.metadata.id;
+        const saved=await saveResponse.json();
+        if(!saveResponse.ok || !saved.success || !saved.id){
+            throw new Error(saved.error || 'Save failed');
+        }
 
-        const shortUrl=new URL('./',location.href);
-        shortUrl.search='?id='+binId;
-        $('link').value=shortUrl.href;
+        const publicUrl=new URL('./',location.href);
+        publicUrl.search='';
+        publicUrl.searchParams.set('id',saved.id);
+
+        let finalUrl=publicUrl.href;
+        try{
+            const shortResponse=await fetch(API_URL+'/api/shorten',{
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({url:publicUrl.href})
+            });
+            const shortened=await shortResponse.json();
+            if(shortResponse.ok && shortened.success && shortened.shortUrl){
+                finalUrl=shortened.shortUrl;
+            }
+        }catch(shortError){
+            console.warn('Short link unavailable; using full invitation URL.',shortError);
+        }
+
+        $('link').value=finalUrl;
         $('result').hidden=false;
         $('copy').textContent='نسخ الرابط';
     }catch(err){
-        alert('حدث خطأ أثناء الاتصال بالسحابة، تأكد من الإنترنت وحاول مرة أخرى.');
+        console.error(err);
+        alert('تعذّر إنشاء الدعوة. تأكد من الاتصال وحاول مرة أخرى.');
     }finally{
         btn.disabled=false;
         btn.textContent=origText;
