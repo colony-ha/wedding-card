@@ -21,23 +21,41 @@ if (!window.location.search && (window.location.pathname === "/wedding-card" || 
 <div class="footer">بكل الحب، <span id="footerNames">هاني وتيزيغي</span> 🌹</div></main>
 <script>
 const p=new URLSearchParams(location.search);
-const get=(k,f)=>p.has(k)?p.get(k):f;
-const groom=get('groom','هاني'),bride=get('bride','تيزيغي');
-const date=get('date','2027-11-20'),time=get('time','20:00'),venue=get('venue','قاعة الأفراح — وهران');
-const phone=get('phone','213551708889'),mapUrl=get('maps','https://maps.app.goo.gl/f7mhshXo3dU88HcU9');
+let data = {};
+
+// قراءة البيانات المشفرة أو العادية
+if(p.has('d')) {
+  try {
+    const binaryString = atob(p.get('d'));
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) { bytes[i] = binaryString.charCodeAt(i); }
+    data = JSON.parse(new TextDecoder().decode(bytes));
+  } catch(e) { console.error("Error decoding data"); }
+}
+
+const get=(k,f)=> data[k] !== undefined ? data[k] : (p.has(k) ? p.get(k) : f);
+
+const groom=get('groom','هاني'), bride=get('bride','تيزيغي');
+const date=get('date','2027-11-20'), time=get('time','20:00'), venue=get('venue','قاعة الأفراح — وهران');
+const phone=get('phone','213551708889'), mapUrl=get('maps','https://maps.app.goo.gl/f7mhshXo3dU88HcU9');
 const message=get('message','بكل حب وفرح، يشرفنا دعوتكم لمشاركتنا أجمل أيام العمر وحضور حفل زفافنا. حضوركم يزيد فرحتنا جمالًا!');
+
 const safeText=(id,v)=>{document.getElementById(id).textContent=v;};
-safeText('groom',groom);safeText('bride',bride);safeText('footerNames',groom+' و '+bride);safeText('message',message);
+safeText('groom',groom); safeText('bride',bride); safeText('footerNames',groom+' و '+bride); safeText('message',message);
+
 function formatDate(v){if(!v)return 'تاريخ العرس';const d=new Date(v+'T12:00:00');return Number.isNaN(d.getTime())?v:d.toLocaleDateString('ar-DZ',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}
-safeText('dateLine','📅 '+formatDate(date));safeText('timeLine','🕗 الساعة '+time);safeText('venueLine','📍 '+venue);
+safeText('dateLine','📅 '+formatDate(date)); safeText('timeLine','🕗 الساعة '+time); safeText('venueLine','📍 '+venue);
 document.title='دعوة زفاف - '+groom+' و '+bride;
+
 const rsvp=document.getElementById('rsvp');
 rsvp.href='https://wa.me/'+phone.replace(/\D/g,'')+'?text='+encodeURIComponent('السلام عليكم، نحب نأكد حضوري في عرس '+groom+' و '+bride+'.');
+
 const map=document.getElementById('map');
 if(mapUrl && /^https?:\/\//i.test(mapUrl)){map.href=mapUrl;map.hidden=false;}else{map.hidden=true;}
+
 const weddingDate=new Date((date||'2027-11-20')+'T'+(time||'20:00')+':00');
 const parts={days:document.getElementById('days'),hours:document.getElementById('hours'),minutes:document.getElementById('minutes'),seconds:document.getElementById('seconds')};
 function updateCountdown(){let r=Math.max(0,weddingDate.getTime()-Date.now());const d=Math.floor(r/86400000);r%=86400000;const h=Math.floor(r/3600000);r%=3600000;const m=Math.floor(r/60000);r%=60000;const s=Math.floor(r/1000);parts.days.textContent=d.toLocaleString('ar-DZ');parts.hours.textContent=h.toLocaleString('ar-DZ');parts.minutes.textContent=m.toLocaleString('ar-DZ');parts.seconds.textContent=s.toLocaleString('ar-DZ');}
 updateCountdown();setInterval(updateCountdown,1000);
-if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){function createPetal(){const p=document.createElement('span');p.className='petal';p.textContent=Math.random()>.5?'🌸':'🌹';p.style.left=Math.random()*100+'vw';p.style.fontSize=(13+Math.random()*14)+'px';p.style.setProperty('--drift',(Math.random()*180-90)+'px');p.style.animationDuration=(8+Math.random()*8)+'s';document.body.appendChild(p);setTimeout(()=>p.remove(),17000);}setInterval(createPetal,850);}
-</script></body></html>
+
+if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){function createPetal(){const p=document.createElement('span');p.
