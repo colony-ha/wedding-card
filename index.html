@@ -55,7 +55,7 @@ function renderCard(data, isPreview=false){
 // جلب بيانات الدعوة من Wedding Card API
 if(p.has('id')){
     const invitationId=p.get('id');
-    fetch('https://wedding-api.colonyus666.workers.dev/api/invitations/'+encodeURIComponent(invitationId))
+    fetch('https://cloudflare-not-connected.invalid/api/invitations/'+encodeURIComponent(invitationId))
         .then(async r=>{
             const res=await r.json();
             if(!r.ok || !res.success || !res.invitation) throw new Error('Invitation unavailable');
