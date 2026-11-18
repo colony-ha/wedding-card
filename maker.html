@@ -111,7 +111,8 @@ function renderInvitationList(){
    const status=r.status==='paid'?'مفعّل':r.status==='cancelled'?'ملغى':'بانتظار الدفع';
    const safeId=String(r.id).replace(/[^a-zA-Z0-9]/g,'');
    return '<div class="result" style="margin:10px 0"><strong>'+status+'</strong><div class="hint" dir="ltr">'+safeId+'</div><div class="actions">'+
-    (r.status==='pending'?'<button class="primary" type="button" data-action="activate" data-id="'+safeId+'">تفعيل 30 يوماً</button><button class="secondary" type="button" data-action="cancel" data-id="'+safeId+'">إلغاء الرابط</button>':'')+
+    (r.status==='pending'?'<button class="primary" type="button" data-action="activate" data-id="'+safeId+'">تفعيل 30 يوماً</button>':'')+
+    ((r.status==='pending'||r.status==='paid')?'<button class="secondary" type="button" data-action="cancel" data-id="'+safeId+'">إلغاء الرابط</button>':'')+
     '<button class="secondary" type="button" data-action="open" data-index="'+i+'">فتح الرابط</button></div></div>';
  }).join('');
 }
