@@ -9,13 +9,21 @@
 <div class="wide"><label for="maps">رابط Google Maps (اختياري)</label><input id="maps" type="url" placeholder="https://maps.app.goo.gl/..."></div>
 <div class="wide"><label for="message">رسالة إضافية (اختياري)</label><textarea id="message" placeholder="بكل حب وفرح، يشرفنا دعوتكم لمشاركتنا فرحتنا."></textarea></div></div>
 <div class="actions"><button class="primary" id="submitBtn" type="submit">🔗 إنشاء رابط الزبون</button><button class="secondary" type="reset">مسح المعلومات</button></div></form>
-<section class="result" id="result" hidden><label for="link">رابط الدعوة القصير الجاهز</label><input class="url" id="link" readonly><div class="actions"><button class="primary" id="copy" type="button">نسخ الرابط</button><button class="secondary" id="open" type="button">فتح الدعوة</button></div><p class="hint">الرابط محفوظ سحابياً وقصير ومباشر باسم موقعك، ابعته للزبون.</p></section></section>
+<section class="result" id="result" hidden><label for="link">رابط الدعوة القصير الجاهز</label><input class="url" id="link" readonly><div class="actions"><button class="primary" id="copy" type="button">نسخ الرابط</button><button class="secondary" id="open" type="button">فتح الدعوة</button></div><p class="hint">الرابط محفوظ سحابياً وقصير ومباشر باسم موقعك، ابعته للزبون.</p></section>
+<section class="result" id="adminPanel">
+<h2>🔐 إدارة روابط الزبائن</h2>
+<label for="adminToken">مفتاح الإدارة (سري)</label>
+<input id="adminToken" type="password" autocomplete="off" placeholder="أدخل WEDDING_ADMIN_TOKEN">
+<p class="hint">بعد الدفع اضغط تفعيل لمدة 30 يوماً. إذا لم يتم الدفع اضغط إلغاء.</p>
+<div id="invitationList"></div>
+</section></section>
 <section class="panel preview-panel"><h2>👀 المعاينة المباشرة</h2><div class="preview-shell"><iframe id="preview" title="معاينة دعوة الزفاف"></iframe></div></section></div>
 <div class="back"><a href="index.html">فتح الموديل الأصلي</a></div>
 <script>
 const $=id=>document.getElementById(id);
 const keys=['groom','bride','date','time','venue','phone','maps','message'];
-const API_URL='https://wedding-card-api.colonyus666.workers.dev';
+const API_URL='https://wedding-api.colonyus666.workers.dev';
+const STORAGE_KEY='weddingCardAdminInvitations';
 
 // تحديث المعاينة المباشرة محلياً بسرعة
 function makePreviewUrl(){
@@ -78,6 +86,10 @@ $('form').addEventListener('submit',async e=>{
         $('link').value=finalUrl;
         $('result').hidden=false;
         $('copy').textContent='نسخ الرابط';
+        const records=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+        records.unshift({id:saved.id,url:finalUrl,createdAt:new Date().toISOString(),status:'pending'});
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(records.slice(0,100)));
+        renderInvitationList();
     }catch(err){
         console.error(err);
         alert('تعذّر إنشاء الدعوة. تأكد من الاتصال وحاول مرة أخرى.');
@@ -90,5 +102,44 @@ $('form').addEventListener('submit',async e=>{
 $('copy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('link').value);$('copy').textContent='تم النسخ ✓'}catch(e){$('link').focus();$('link').select();document.execCommand('copy');$('copy').textContent='انسخ الرابط المحدد'}});
 $('open').addEventListener('click',()=>{if($('link').value)window.open($('link').value,'_blank','noopener')});
 $('form').addEventListener('reset',()=>{setTimeout(()=>{$('result').hidden=true;updatePreview()},0)});
+
+function renderInvitationList(){
+ const records=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+ const host=$('invitationList');
+ if(!records.length){host.innerHTML='<p class="hint">لا توجد روابط محفوظة على هذا الجهاز حتى الآن.</p>';return;}
+ host.innerHTML=records.map((r,i)=>{
+   const status=r.status==='paid'?'مفعّل':r.status==='cancelled'?'ملغى':'بانتظار الدفع';
+   const safeId=String(r.id).replace(/[^a-zA-Z0-9]/g,'');
+   return '<div class="result" style="margin:10px 0"><strong>'+status+'</strong><div class="hint" dir="ltr">'+safeId+'</div><div class="actions">'+
+    (r.status==='pending'?'<button class="primary" type="button" data-action="activate" data-id="'+safeId+'">تفعيل 30 يوماً</button><button class="secondary" type="button" data-action="cancel" data-id="'+safeId+'">إلغاء الرابط</button>':'')+
+    '<button class="secondary" type="button" data-action="open" data-index="'+i+'">فتح الرابط</button></div></div>';
+ }).join('');
+}
+$('invitationList').addEventListener('click',async e=>{
+ const btn=e.target.closest('button[data-action]');
+ if(!btn)return;
+ const action=btn.dataset.action;
+ const records=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+ const record=action==='open'?records[Number(btn.dataset.index)]:records.find(x=>x.id===btn.dataset.id);
+ if(!record)return;
+ if(action==='open'){window.open(record.url,'_blank','noopener');return;}
+ const token=$('adminToken').value.trim();
+ if(!token){alert('أدخل مفتاح الإدارة أولاً.');return;}
+ if(!confirm(action==='activate'?'تأكيد تفعيل الدعوة لمدة 30 يوماً؟':'تأكيد إلغاء الدعوة نهائياً؟'))return;
+ btn.disabled=true;
+ try{
+  const response=await fetch(API_URL+(action==='activate'?'/api/admin/activate':'/api/admin/cancel'),{
+   method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+   body:JSON.stringify({id:record.id})
+  });
+  const data=await response.json();
+  if(!response.ok||!data.success)throw new Error(data.error||'Operation failed');
+  record.status=action==='activate'?'paid':'cancelled';
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(records));
+  renderInvitationList();
+  alert(action==='activate'?'تم تفعيل الرابط لمدة 30 يوماً.':'تم إلغاء الرابط.');
+ }catch(err){alert('فشلت العملية: '+err.message);btn.disabled=false;}
+});
+renderInvitationList();
 updatePreview();
 </script></body></html>
