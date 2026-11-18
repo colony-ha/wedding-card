@@ -62,7 +62,16 @@ if(p.has('id')){
             return res;
         })
         .then(result=>renderCard(result.invitation, result.isPreview === true))
-        .catch(()=>renderCard({}));
+        .catch(()=>{
+            clearInterval(timerInterval);
+            document.getElementById('invitationCard').innerHTML =
+                '<div style="padding:45px 20px;text-align:center">' +
+                '<div style="font-size:42px;margin-bottom:18px">🔒</div>' +
+                '<h1 style="font-size:26px;color:#9a5939">هذه الدعوة غير متاحة</h1>' +
+                '<p style="line-height:2">قد يكون صاحب الدعوة قد ألغى الرابط أو انتهت صلاحيته.<br>يرجى التواصل مع صاحب الدعوة للحصول على رابط جديد.</p>' +
+                '</div>';
+            document.title = 'الدعوة غير متاحة';
+        });
 } else {
     renderCard({});
 }
