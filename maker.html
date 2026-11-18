@@ -33,6 +33,9 @@ function makePreviewUrl(){
         const v=$(k).value.trim();
         if(v)u.searchParams.set(k,v);
     }
+    // أسماء عامة للمعاينة عندما تكون خانات العروسين فارغة
+    if(!$('groom').value.trim())u.searchParams.set('groom','اسم العريس');
+    if(!$('bride').value.trim())u.searchParams.set('bride','اسم العروس');
     return u;
 }
 function updatePreview(){$('preview').src=makePreviewUrl().href;}
